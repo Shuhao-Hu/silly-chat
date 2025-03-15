@@ -1,9 +1,14 @@
 import { useState } from "react";
 import { Text, TextInput, View, StyleSheet, Dimensions, Alert, TouchableOpacity } from "react-native";
 import Button from "../components/button";
+import { useApi } from "@/context/ApiContext";
+import { useAuth } from "@/context/AuthContext";
 
 
 export default function Index() {
+  const { userLogin, userSignup } = useApi();
+  const { login } = useAuth();
+
   const [inLogin, setInLogin] = useState(true);
 
   // Login Hooks
@@ -11,18 +16,28 @@ export default function Index() {
   const [isPwFocused, setIsPwFocused] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const submitLogin = () => {
+  const submitLogin = async () => {
     if (!email || !password) {
       Alert.alert("Error", "Please fill in both fields");
       return;
     }
-    Alert.alert("Success", `Logged in as ${email}`);
+
+    const response = await userLogin({ email, password });
+    if ("error" in response) {
+      Alert.alert("Error", response.error);
+    } else {
+      const { id, username, access_token, refresh_token } = response;
+      login(id, username, access_token, refresh_token);
+    }
   }
 
   // Signup Hooks
+  const [username, setUsername] = useState("");
+  const [isUsernameFocused, setIsUsernameFocused] = useState(false);
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isConfirmPwFocused, setIsConfirmPwFocused] = useState(false);
-  const submitSignup = () => {
+
+  const submitSignup = async () => {
     if (!email || !password || !confirmPassword) {
       Alert.alert("Error", "Please fill in all fields");
       return;
@@ -31,7 +46,17 @@ export default function Index() {
       Alert.alert("Error", "Two Passwords do not match");
       return;
     }
-    Alert.alert("Success", `Signed up as ${email}`);
+    const response = await userSignup({ email, password, username })
+    if ("error" in response) {
+      Alert.alert("Error", response.error);
+    } else {
+      Alert.alert("Success", "Account created successfully");
+      setUsername("");
+      setConfirmPassword("");
+      setPassword("");
+      setEmail("");
+      setInLogin(true);
+    }
   }
 
   // Switch Pages
@@ -43,6 +68,7 @@ export default function Index() {
     setIsEmailFocused(false);
     setIsPwFocused(false);
     setIsConfirmPwFocused(false);
+    setIsUsernameFocused(false);
   }
 
   const loginHtml = () => {
@@ -57,6 +83,8 @@ export default function Index() {
               placeholder="Email"
               value={email}
               onChangeText={setEmail}
+              autoCapitalize="none"
+              autoCorrect={false}
               onFocus={() => setIsEmailFocused(true)}
               onBlur={() => setIsEmailFocused(false)}
             />
@@ -64,6 +92,8 @@ export default function Index() {
               placeholder="Password"
               secureTextEntry={true}
               value={password}
+              autoCapitalize="none"
+              autoCorrect={false}
               onChangeText={setPassword}
               onFocus={() => setIsPwFocused(true)}
               onBlur={() => setIsPwFocused(false)}
@@ -96,10 +126,21 @@ export default function Index() {
         </View>
         <View style={styles.formRow}>
           <View style={styles.form}>
+            <TextInput style={[styles.inputField, isUsernameFocused && styles.inputFocused]}
+              placeholder="Username"
+              value={username}
+              onChangeText={setUsername}
+              autoCapitalize="none"
+              autoCorrect={false}
+              onFocus={() => setIsUsernameFocused(true)}
+              onBlur={() => setIsUsernameFocused(false)}
+            />
             <TextInput style={[styles.inputField, isEmailFocused && styles.inputFocused]}
               placeholder="Email"
               value={email}
               onChangeText={setEmail}
+              autoCapitalize="none"
+              autoCorrect={false}
               onFocus={() => setIsEmailFocused(true)}
               onBlur={() => setIsEmailFocused(false)}
             />
@@ -108,6 +149,8 @@ export default function Index() {
               secureTextEntry={true}
               value={password}
               onChangeText={setPassword}
+              autoCapitalize="none"
+              autoCorrect={false}
               onFocus={() => setIsPwFocused(true)}
               onBlur={() => setIsPwFocused(false)}
             />
@@ -116,6 +159,8 @@ export default function Index() {
               secureTextEntry={true}
               value={confirmPassword}
               onChangeText={setConfirmPassword}
+              autoCapitalize="none"
+              autoCorrect={false}
               onFocus={() => setIsConfirmPwFocused(true)}
               onBlur={() => setIsConfirmPwFocused(false)}
             />
