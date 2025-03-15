@@ -20,7 +20,11 @@ export default function Account() {
   }, [isLoggedIn]);
 
   if (!isLoggedIn) {
-    return <Login />;
+    return (
+      <View>
+        <Text>You are not logged in!</Text>
+      </View>
+    );
   }
 
   if (!user) {

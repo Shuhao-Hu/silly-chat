@@ -2,7 +2,7 @@ import { useApi } from "@/context/ApiContext";
 import { useAuth } from "@/context/AuthContext";
 import { useEffect, useState } from "react";
 import { View, Text, ActivityIndicator, StyleSheet } from "react-native";
-import FriendRequestItem from "../components/friendrequest";
+import FriendRequestItem from "../components/friend_request";
 import ContactsList from "../components/contact_list";
 import { Contact, FriendRequest } from "@/types/types"
 
@@ -11,10 +11,10 @@ export default function Contacts() {
   const { fetchContacts, fetchFriendRequests, respondFriendRequest } = useApi();
 
   const [contacts, setContacts] = useState<Contact[]>([]);
-  const [contactsLoading, setContactsLoading] = useState(true);
+  const [contactsLoading, setContactsLoading] = useState(false);
 
   const [friendRequests, setFriendRequests] = useState<FriendRequest[]>([]);
-  const [requestLoading, setRequestLoading] = useState(true);
+  const [requestLoading, setRequestLoading] = useState(false);
 
   const onAccept = async (requestId: number) => {
     await respondFriendRequest(requestId, "accepted");
@@ -30,6 +30,7 @@ export default function Contacts() {
   };
 
   useEffect(() => {
+    if (!isLoggedIn) return;
     const fetchData = async () => {
       try {
         setContactsLoading(true);
@@ -45,6 +46,7 @@ export default function Contacts() {
   }, [fetchContacts]);
 
   useEffect(() => {
+    if (!isLoggedIn) return;
     const fetchRequests = async () => {
       try {
         setRequestLoading(true);
@@ -69,7 +71,7 @@ export default function Contacts() {
   }
 
   if (!isLoggedIn) {
-    return <Text>You need to be logged in to view contacts</Text>;
+    return <Text>Not Logged in</Text>;
   }
 
   return (
