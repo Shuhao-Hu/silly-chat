@@ -6,16 +6,16 @@ import Close from "./close";
 
 interface FriendRequestItemProps {
   request: FriendRequest;
-  onAccept: (id: number) => void;
-  onReject: (id: number) => void;
+  onAccept: (id: number, senderID: number) => void;
+  onReject: (id: number, senderID: number) => void;
 }
 
 export default function FriendRequestItem({ request, onAccept, onReject }: FriendRequestItemProps) {
   return (
     <View style={styles.requestItem}>
       <Text style={styles.username}>{request.sender_username}</Text>
-      <Check style={styles.button} onPressHandler={() => onAccept(request.friend_request_id)} />
-      <Close style={styles.button} onPressHandler={() => onReject(request.friend_request_id)} />
+      <Check style={styles.button} onPressHandler={() => onAccept(request.friend_request_id, request.sender_id)} />
+      <Close style={styles.button} onPressHandler={() => onReject(request.friend_request_id, request.sender_id)} />
     </View>
   );
 }

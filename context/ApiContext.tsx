@@ -1,7 +1,7 @@
 import { createContext, useContext } from "react";
 import { useAuth } from "./AuthContext";
 import { useConfig } from "./ConfigContext";
-import { Contact, FriendRequest } from "@/types/types";
+import { Contact, FriendRequest, AccessTokenResponse } from "@/types/types";
 
 interface LoginCredential {
   email: string;
@@ -46,13 +46,11 @@ interface FriendRequestResponse {
 interface ApiContextType {
   userLogin: (cred: LoginCredential) => Promise<LoginResponse>;
   fetchContacts: () => Promise<Contact[]>;
-  respondFriendRequest: (request_id: number, response: string) => Promise<void>;
+  respondFriendRequest: (request_id: number, senderID: number, response: string) => Promise<void>;
   fetchFriendRequests: () => Promise<FriendRequest[]>;
   userSignup: (cred: SignupCredential) => Promise<SignupResponse>;
-}
-
-interface AccessTokenResponse {
-  access_token: string;
+  searchContactByEmail: (email: string) => Promise<Contact | null>;
+  sendFriendRequest: (friend_id: number) => Promise<boolean>;
 }
 
 const ApiContext = createContext<ApiContextType | undefined>(undefined);
@@ -145,6 +143,37 @@ export const ApiProvider = ({ children }: { children: React.ReactNode }) => {
     return data.friend_requests;
   };
 
+  const searchContactByEmail = async (email: string) => {
+    const params = new URLSearchParams({ email: email });
+    const response = await fetchWithAuth(`${config.API_URL}/protected/friends/search?${params.toString()}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `${getAccessToken()}`,
+      }
+    });
+    if (!response.ok) {
+      return null;
+    }
+    const data: Contact = await response.json();
+    return data;
+  }
+
+  const sendFriendRequest = async (friend_id: number) => {
+    const response = await fetchWithAuth(`${config.API_URL}/protected/friends/requests`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `${getAccessToken()}`,
+      },
+      body: JSON.stringify({
+        friend_id: friend_id
+      }),
+    });
+
+    return response.ok;
+  }
+
   const userLogin = async (cred: LoginCredential) => {
     const response = await fetch(config.API_URL + "/login", {
       method: "POST",
@@ -182,14 +211,14 @@ export const ApiProvider = ({ children }: { children: React.ReactNode }) => {
     return data as SignupSuccess;
   };
 
-  const respondFriendRequest = async (friendRequestID: number, friendRequestResponse: string) => {
+  const respondFriendRequest = async (friendRequestID: number, senderID: number, friendRequestResponse: string) => {
     const response = await fetchWithAuth(config.API_URL + `/protected/friends/requests/${friendRequestID}`, {
       method: 'PUT',
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        sender_id: friendRequestID,
+        sender_id: senderID,
         response: friendRequestResponse,
       }),
     });
@@ -199,7 +228,15 @@ export const ApiProvider = ({ children }: { children: React.ReactNode }) => {
   }
 
   return (
-    <ApiContext.Provider value={{ userLogin, userSignup, fetchContacts, fetchFriendRequests, respondFriendRequest }}>
+    <ApiContext.Provider value={{ 
+      userLogin, 
+      userSignup, 
+      fetchContacts, 
+      fetchFriendRequests, 
+      respondFriendRequest, 
+      searchContactByEmail,
+      sendFriendRequest,
+    }}>
       {children}
     </ApiContext.Provider>
   );

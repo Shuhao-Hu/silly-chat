@@ -16,17 +16,17 @@ export default function Contacts() {
   const [friendRequests, setFriendRequests] = useState<FriendRequest[]>([]);
   const [requestLoading, setRequestLoading] = useState(false);
 
-  const onAccept = async (requestId: number) => {
-    await respondFriendRequest(requestId, "accepted");
-    const request = friendRequests.find((req) => req.friend_request_id === requestId);
+  const onAccept = async (requestID: number, senderID: number) => {
+    await respondFriendRequest(requestID, senderID, "accepted");
+    const request = friendRequests.find((req) => req.friend_request_id === requestID);
     if (!request) return;
-    setFriendRequests(prevRequests => prevRequests.filter(req => req.friend_request_id !== requestId));
-    setContacts(prevContacts => [...prevContacts, { id: request.sender_id, username: request.sender_username }]);
+    setFriendRequests(prevRequests => prevRequests.filter(req => req.friend_request_id !== requestID));
+    setContacts(prevContacts => [...prevContacts, { id: request.sender_id, username: request.sender_username, email: request.sender_email }]);
   };
 
-  const onReject = async (requestId: number) => {
-    await respondFriendRequest(requestId, "rejected");
-    setFriendRequests(friendRequests.filter((request) => request.friend_request_id !== requestId));
+  const onReject = async (requestID: number, senderID: number) => {
+    await respondFriendRequest(requestID, senderID, "rejected");
+    setFriendRequests(friendRequests.filter((request) => request.friend_request_id !== requestID));
   };
 
   useEffect(() => {
