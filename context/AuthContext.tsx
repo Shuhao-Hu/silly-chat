@@ -9,6 +9,7 @@ interface AuthContextType {
   getRefreshToken: () => Promise<string | null>,
   getUser: () => Promise<{ id: number | null, username: string | null }>,
   setAccessToken: (accessToken: string) => Promise<void>,
+  setRefreshToken: (refreshToken: string) => Promise<void>,
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -45,6 +46,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     await AsyncStorage.setItem('access_token', accessToken);
   }
 
+  const setRefreshToken = async (refreshToken: string) => {
+    await AsyncStorage.setItem('refresh_token', refreshToken);
+  }
+
   const getAccessToken = async () => {
     const token = await AsyncStorage.getItem('access_token');
     return token;
@@ -62,7 +67,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }
 
   return (
-    <AuthContext.Provider value={{ isLoggedIn, login, logout, getAccessToken, getRefreshToken, getUser, setAccessToken}}>
+    <AuthContext.Provider value={{ isLoggedIn, login, logout, getAccessToken, getRefreshToken, getUser, setAccessToken, setRefreshToken }}>
       {children}
     </AuthContext.Provider>
   )

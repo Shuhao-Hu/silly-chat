@@ -13,8 +13,10 @@ export interface FriendRequest {
 
 export type RootStackParamList = {
   add_friend: undefined;
+  friend_requests: undefined;
 };
 
 export interface AccessTokenResponse {
   access_token: string;
+  refresh_token: string;
 }

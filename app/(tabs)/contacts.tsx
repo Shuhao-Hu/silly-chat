@@ -1,10 +1,13 @@
 import { useApi } from "@/context/ApiContext";
 import { useAuth } from "@/context/AuthContext";
 import { useEffect, useState } from "react";
-import { View, Text, ActivityIndicator, StyleSheet } from "react-native";
-import FriendRequestItem from "../components/friend_request";
+import { View, Text, ActivityIndicator, StyleSheet, TouchableOpacity } from "react-native";
 import ContactsList from "../components/contact_list";
-import { Contact, FriendRequest } from "@/types/types"
+import { Contact, RootStackParamList } from "@/types/types"
+import { useStateContext } from "@/context/StateContext";
+import Entypo from '@expo/vector-icons/Entypo';
+import { useNavigation } from "expo-router";
+import { StackNavigationProp } from "@react-navigation/stack";
 
 export default function Contacts() {
   const { isLoggedIn } = useAuth();
@@ -13,21 +16,8 @@ export default function Contacts() {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [contactsLoading, setContactsLoading] = useState(false);
 
-  const [friendRequests, setFriendRequests] = useState<FriendRequest[]>([]);
-  const [requestLoading, setRequestLoading] = useState(false);
-
-  const onAccept = async (requestID: number, senderID: number) => {
-    await respondFriendRequest(requestID, senderID, "accepted");
-    const request = friendRequests.find((req) => req.friend_request_id === requestID);
-    if (!request) return;
-    setFriendRequests(prevRequests => prevRequests.filter(req => req.friend_request_id !== requestID));
-    setContacts(prevContacts => [...prevContacts, { id: request.sender_id, username: request.sender_username, email: request.sender_email }]);
-  };
-
-  const onReject = async (requestID: number, senderID: number) => {
-    await respondFriendRequest(requestID, senderID, "rejected");
-    setFriendRequests(friendRequests.filter((request) => request.friend_request_id !== requestID));
-  };
+  const { friendRequests, setFriendRequests, refreshFriendRequests } = useStateContext();
+  const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
 
   useEffect(() => {
     if (!isLoggedIn) return;
@@ -43,25 +33,10 @@ export default function Contacts() {
       }
     };
     fetchData();
-  }, [fetchContacts]);
+    refreshFriendRequests();
+  }, [isLoggedIn]);
 
-  useEffect(() => {
-    if (!isLoggedIn) return;
-    const fetchRequests = async () => {
-      try {
-        setRequestLoading(true);
-        const fetchedRequests = await fetchFriendRequests();
-        setFriendRequests(fetchedRequests);
-      } catch (error) {
-        console.error("Error fetching friend requests:", error);
-      } finally {
-        setRequestLoading(false);
-      }
-    };
-    fetchRequests();
-  }, [fetchFriendRequests]);
-
-  if (contactsLoading || requestLoading) {
+  if (contactsLoading) {
     return (
       <View style={styles.loading}>
         <ActivityIndicator size="large" color="#007bff" />
@@ -76,19 +51,12 @@ export default function Contacts() {
 
   return (
     <View style={styles.container}>
-      {friendRequests.length > 0 && (
-        <View>
-          {friendRequests.map((request) => (
-            <FriendRequestItem
-              key={request.friend_request_id}
-              request={request}
-              onAccept={onAccept}
-              onReject={onReject}
-            />
-          ))}
+      <TouchableOpacity onPress={() => navigation.navigate("friend_requests")}>
+        <View style={styles.friendRequestContainer}>
+          <Text style={styles.friendRequestText}>Friend Requests</Text>
+          <Entypo style={styles.chevronIcon} name="chevron-thin-right" size={20} color="black" />
         </View>
-      )}
-
+      </TouchableOpacity>
       {contacts.length > 0 ? (
         <ContactsList contacts={contacts}></ContactsList>
       ) : (
@@ -107,5 +75,25 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
+  },
+  friendRequestContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: "#f8f9fa",
+    borderRadius: 10,
+    marginBottom: 10,
+    borderWidth: 0.5,
+    borderColor: "#094067",
+  },
+  friendRequestText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#333",
+  },
+  chevronIcon: {
+    marginLeft: 10,
   },
 });

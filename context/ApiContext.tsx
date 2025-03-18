@@ -57,9 +57,9 @@ const ApiContext = createContext<ApiContextType | undefined>(undefined);
 
 export const ApiProvider = ({ children }: { children: React.ReactNode }) => {
   const config = useConfig();
-  const { logout, getAccessToken, getRefreshToken, setAccessToken } = useAuth();
+  const { logout, getAccessToken, getRefreshToken, setAccessToken, setRefreshToken } = useAuth();
 
-  const refreshAccessToken = async (): Promise<string | null> => {
+  const refreshAccessToken = async (): Promise<AccessTokenResponse | null> => {
     try {
       const refreshToken = await getRefreshToken();
       if (!refreshToken) throw new Error("No refresh token found");
@@ -77,7 +77,7 @@ export const ApiProvider = ({ children }: { children: React.ReactNode }) => {
         throw new Error("Failed to refresh access token");
       }
       const data: AccessTokenResponse = await response.json();
-      return data.access_token;
+      return data;
     } catch (error) {
       logout();
       return null;
@@ -96,8 +96,8 @@ export const ApiProvider = ({ children }: { children: React.ReactNode }) => {
     });
     if (response.status === 401) {
       console.log("Access token expired, refreshing...");
-      const newToken = await refreshAccessToken();
-      if (!newToken) {
+      const tokens = await refreshAccessToken();
+      if (!tokens) {
         logout();
         return response;
       }
@@ -105,10 +105,11 @@ export const ApiProvider = ({ children }: { children: React.ReactNode }) => {
         ...options,
         headers: {
           ...options.headers,
-          Authorization: `${newToken}`,
+          Authorization: `${tokens.access_token}`,
         },
       });
-      setAccessToken(newToken);
+      setAccessToken(tokens.access_token);
+      setRefreshToken(tokens.refresh_token);
     }
     return response;
   };
@@ -228,12 +229,12 @@ export const ApiProvider = ({ children }: { children: React.ReactNode }) => {
   }
 
   return (
-    <ApiContext.Provider value={{ 
-      userLogin, 
-      userSignup, 
-      fetchContacts, 
-      fetchFriendRequests, 
-      respondFriendRequest, 
+    <ApiContext.Provider value={{
+      userLogin,
+      userSignup,
+      fetchContacts,
+      fetchFriendRequests,
+      respondFriendRequest,
       searchContactByEmail,
       sendFriendRequest,
     }}>

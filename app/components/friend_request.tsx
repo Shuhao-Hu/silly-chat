@@ -24,17 +24,17 @@ const styles = StyleSheet.create({
   requestItem: {
     padding: 10,
     marginVertical: 5,
-    borderBottomWidth: 2,
+    borderBottomWidth: 1.5,
     borderBottomColor: "#094067",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
   },
   username: {
-    flex: 4,
+    flex: 5,
   },
   button: {
     flex: 1,
-    alignItems: "center",
+    alignItems: "flex-end",
   },
 });
