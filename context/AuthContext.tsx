@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect, useContext, ReactNode } from "react";
+import React, {createContext, ReactNode, useContext, useEffect, useState} from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 interface AuthContextType {
@@ -51,13 +51,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }
 
   const getAccessToken = async () => {
-    const token = await AsyncStorage.getItem('access_token');
-    return token;
+    return await AsyncStorage.getItem('access_token');
   }
 
   const getRefreshToken = async () => {
-    const token = await AsyncStorage.getItem('refresh_token');
-    return token;
+    return await AsyncStorage.getItem('refresh_token');
   }
 
   const getUser = async () => {

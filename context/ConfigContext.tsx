@@ -10,8 +10,8 @@ interface ConfigType {
 
 // Define separate configs for development and release
 const devConfig: ConfigType = {
-  API_URL: "http://localhost:3000",
-  SOCKET_URL: "ws://localhost:3000/ws",
+  API_URL: "http://localhost:5286",
+  SOCKET_URL: "ws://localhost:5286/ws",
   ENV: "development",
 };
 
@@ -35,6 +35,10 @@ export const ConfigProvider = ({ children }: { children: ReactNode }) => {
 };
 
 export const useConfig = (): ConfigType => {
-  return useContext(ConfigContext);
+  const context = useContext(ConfigContext);
+  if (!context) {
+    throw new Error("useConfig must be used within an ConfigProvider");
+  }
+  return context;
 };
 

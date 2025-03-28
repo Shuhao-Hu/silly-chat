@@ -1,6 +1,11 @@
 import React, { useState, useRef, useEffect } from "react";
 import { View, Text, SectionList, TouchableOpacity, StyleSheet } from "react-native";
-import { Contact } from "@/types/types";
+import { ActiveConversation, Contact } from "@/types/types";
+import { useRouter } from "expo-router";
+import { useStateContext } from "@/context/StateContext";
+import { useSQLiteContext } from "expo-sqlite";
+import { useAuth } from "@/context/AuthContext";
+import { insertConversation } from "@/db/sqlite";
 
 interface ContactsListProps {
   contacts: Contact[];
@@ -9,10 +14,14 @@ interface ContactsListProps {
 export default function ContactsList({ contacts }: ContactsListProps) {
   const sectionListRef = useRef<SectionList>(null);
   const [sections, setSections] = useState(createSections(contacts));
+  const { activeConversations, setActiveConversations } = useStateContext();
+  const { getUser } = useAuth();
+  const db = useSQLiteContext();
+  const router = useRouter()
 
   useEffect(() => {
     setSections(createSections(contacts));
-  }, [contacts]);  
+  }, [contacts]);
 
   function createSections(contacts: Contact[]) {
     const groupedContacts: { [key: string]: Contact[] } = {};
@@ -40,6 +49,24 @@ export default function ContactsList({ contacts }: ContactsListProps) {
     }
   };
 
+  const appendToActiveConversations = async (chattingID: number) => {
+    const { id } = await getUser();
+    if (id === null) {
+      return;
+    }
+    await insertConversation(db, id, chattingID);
+    setActiveConversations(prevActiveConversations =>
+      [
+        ...(prevActiveConversations ?? []),
+        {
+          user_id: id,
+          chatting_user_id: chattingID,
+          last_updated: new Date(),
+        }
+      ]
+    );
+  }
+
   return (
     <View style={styles.container}>
       <SectionList
@@ -48,9 +75,17 @@ export default function ContactsList({ contacts }: ContactsListProps) {
         keyExtractor={(item) => item.id.toString()}
         renderItem={({ item }) => {
           return (
-            <View style={styles.contactItem}>
+            <TouchableOpacity
+              style={styles.contactItem}
+              onPress={
+                async () => {
+                  await appendToActiveConversations(item.id);
+                  router.push(`/${item.id}`);
+                }
+              }
+            >
               <Text>{item.username}</Text>
-            </View>
+            </TouchableOpacity>
           );
         }}
         renderSectionHeader={({ section: { title } }) => (
