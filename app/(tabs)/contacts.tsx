@@ -1,9 +1,8 @@
-import { useApi } from "@/context/ApiContext";
 import { useAuth } from "@/context/AuthContext";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { View, Text, ActivityIndicator, StyleSheet, TouchableOpacity } from "react-native";
 import ContactsList from "../components/contact_list";
-import { Contact, RootStackParamList } from "@/types/types"
+import { RootStackParamList } from "@/types/types"
 import { useStateContext } from "@/context/StateContext";
 import Entypo from '@expo/vector-icons/Entypo';
 import { useNavigation } from "expo-router";
@@ -11,32 +10,17 @@ import { StackNavigationProp } from "@react-navigation/stack";
 
 export default function Contacts() {
   const { isLoggedIn } = useAuth();
-  const { fetchContacts, fetchFriendRequests, respondFriendRequest } = useApi();
 
-  const [contacts, setContacts] = useState<Contact[]>([]);
-  const [contactsLoading, setContactsLoading] = useState(false);
-
-  const { friendRequests, setFriendRequests, refreshFriendRequests } = useStateContext();
+  const { contacts, setContacts, refreshFriendRequests } = useStateContext();
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
 
   useEffect(() => {
     if (!isLoggedIn) return;
-    const fetchData = async () => {
-      try {
-        setContactsLoading(true);
-        const fetchedContacts = await fetchContacts();
-        setContacts(fetchedContacts);
-      } catch (error) {
-        console.error("Error fetching contacts:", error);
-      } finally {
-        setContactsLoading(false);
-      }
-    };
-    fetchData();
+    console.log(contacts);
     refreshFriendRequests();
   }, [isLoggedIn]);
 
-  if (contactsLoading) {
+  if (contacts === null) {
     return (
       <View style={styles.loading}>
         <ActivityIndicator size="large" color="#007bff" />

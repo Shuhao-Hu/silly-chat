@@ -20,3 +20,25 @@ export interface AccessTokenResponse {
   access_token: string;
   refresh_token: string;
 }
+
+export type WsMessageType = "dm" | "friend_request";
+
+export interface WebSocketMessage<T = unknown> {
+  type: WsMessageType;
+  payload: T;
+}
+
+export interface DirectMessagePayload {
+  sender_id: number,
+  recipient_id: number,
+  content: string,
+  timestamp: string,
+}
+
+export interface ActiveConversation {
+  user_id: number,
+  chatting_user_id: number,
+  last_updated: Date,
+}
+
+

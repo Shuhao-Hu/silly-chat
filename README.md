@@ -1,51 +1,30 @@
-# Welcome to your Expo app 👋
+# Silly Chat - Frontend (Expo)
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Welcome to the Silly Chat frontend! This is the mobile app for Silly Chat, built using React Native and Expo. The app connects to the backend service for real-time messaging, user authentication, and managing chat interactions.
 
-## Get started
+## Features
 
-1. Install dependencies
+- **Real-Time Messaging**: Receive and send messages in real-time via WebSocket connection.
+- **User Authentication**: Login and registration functionality using JWT tokens.
+- **Chat Interface**: Easy-to-use interface for individual chats.
+- **Offline Support**: Store messages locally and sync when the device is online.
 
-   ```bash
-   npm install
-   ```
+## Prerequisites
 
-2. Start the app
+Before running the frontend, make sure you have the following installed:
 
-   ```bash
-    npx expo start
-   ```
+- [Node.js](https://nodejs.org/) (v14 or higher)
+- [Expo CLI](https://docs.expo.dev/get-started/installation/) (if not installed, run `npm install -g expo-cli`)
+- A mobile device or an emulator for testing.
 
-In the output, you'll find options to open the app in a
+## Run
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+- **To run on IOS**
+```
+npm run ios
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
-# silly-chat
+- **To run on Android**
+```
+npm run android
+```

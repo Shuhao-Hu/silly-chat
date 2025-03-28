@@ -1,20 +1,27 @@
-import { Stack } from 'expo-router';
+import { Stack, useLocalSearchParams } from 'expo-router';
 import GoBackButton from './components/go_back_button';
 import { ConfigProvider } from '@/context/ConfigContext';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { ApiProvider } from '@/context/ApiContext';
 import Login from './auth';
-import { StateProvider } from '@/context/StateContext';
+import { StateProvider, useStateContext } from '@/context/StateContext';
+import { SQLiteProvider } from 'expo-sqlite';
+import { createDbIfNeeded } from '@/db/sqlite';
+import { WebsocketProvider } from '@/context/WebsocketContext';
 
 export default function RootLayout() {
   return (
     <ConfigProvider>
       <AuthProvider>
-        <ApiProvider>
-          <StateProvider>
-            <ProtectedRoutes />
-          </StateProvider>
-        </ApiProvider>
+        <SQLiteProvider databaseName={'silly-chat.db'} onInit={createDbIfNeeded}>
+          <ApiProvider>
+            <StateProvider>
+              <WebsocketProvider>
+                <ProtectedRoutes />
+              </WebsocketProvider>
+            </StateProvider>
+          </ApiProvider>
+        </SQLiteProvider>
       </AuthProvider>
     </ConfigProvider>
   );
@@ -37,6 +44,11 @@ function ProtectedRoutes() {
       }} />
       <Stack.Screen name="friend_requests" options={{
         title: "Friend Requests",
+        headerLeft: () => <GoBackButton />,
+        headerTitleAlign: "center",
+      }} />
+      <Stack.Screen name="[chat]" options={{
+        title: "Loading...",
         headerLeft: () => <GoBackButton />,
         headerTitleAlign: "center",
       }} />

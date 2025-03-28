@@ -26,6 +26,7 @@ export default function Index() {
     if ("error" in response) {
       Alert.alert("Error", response.error);
     } else {
+      console.log("Logging in");
       const { id, username, access_token, refresh_token } = response;
       login(id, username, access_token, refresh_token);
     }

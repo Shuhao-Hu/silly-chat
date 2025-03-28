@@ -1,7 +1,7 @@
-import { createContext, useContext } from "react";
-import { useAuth } from "./AuthContext";
-import { useConfig } from "./ConfigContext";
-import { Contact, FriendRequest, AccessTokenResponse } from "@/types/types";
+import React, {createContext, useContext} from "react";
+import {useAuth} from "./AuthContext";
+import {useConfig} from "./ConfigContext";
+import {AccessTokenResponse, Contact, FriendRequest} from "@/types/types";
 
 interface LoginCredential {
   email: string;
@@ -60,28 +60,26 @@ export const ApiProvider = ({ children }: { children: React.ReactNode }) => {
   const { logout, getAccessToken, getRefreshToken, setAccessToken, setRefreshToken } = useAuth();
 
   const refreshAccessToken = async (): Promise<AccessTokenResponse | null> => {
-    try {
-      const refreshToken = await getRefreshToken();
-      if (!refreshToken) throw new Error("No refresh token found");
-
-      const response = await fetch(config.API_URL + "/refresh", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          refresh_token: refreshToken,
-        }),
-      });
-      if (!response.ok) {
-        throw new Error("Failed to refresh access token");
-      }
-      const data: AccessTokenResponse = await response.json();
-      return data;
-    } catch (error) {
-      logout();
+    const refreshToken = await getRefreshToken();
+    if (!refreshToken) {
+      await logout();
       return null;
     }
+
+    const response = await fetch(config.API_URL + "/auth/refresh", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        refresh_token: refreshToken,
+      }),
+    });
+    if (!response.ok) {
+      await logout();
+      return null;
+    }
+    return await response.json();
   }
 
   const fetchWithAuth = async (url: string, options: RequestInit = {}): Promise<Response> => {
@@ -91,35 +89,35 @@ export const ApiProvider = ({ children }: { children: React.ReactNode }) => {
       ...options,
       headers: {
         ...options.headers,
-        Authorization: `${accessToken}`,
+        Authorization: `Bearer ${accessToken}`,
       },
     });
     if (response.status === 401) {
       console.log("Access token expired, refreshing...");
       const tokens = await refreshAccessToken();
       if (!tokens) {
-        logout();
+        await logout();
         return response;
       }
       response = await fetch(url, {
         ...options,
         headers: {
           ...options.headers,
-          Authorization: `${tokens.access_token}`,
+          Authorization: `Bearer ${tokens.access_token}`,
         },
       });
-      setAccessToken(tokens.access_token);
-      setRefreshToken(tokens.refresh_token);
+      await setAccessToken(tokens.access_token);
+      await setRefreshToken(tokens.refresh_token);
     }
     return response;
   };
 
   const fetchContacts = async () => {
-    const response = await fetchWithAuth(config.API_URL + "/protected/friends", {
+    const response = await fetchWithAuth(config.API_URL + "/friends", {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `${getAccessToken()}`,
+        Authorization: `${await getAccessToken()}`,
       },
     });
     if (!response.ok) {
@@ -130,11 +128,11 @@ export const ApiProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const fetchFriendRequests = async () => {
-    const response = await fetchWithAuth(config.API_URL + "/protected/friends/requests", {
+    const response = await fetchWithAuth(config.API_URL + "/friends/requests", {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `${getAccessToken()}`,
+        Authorization: `${await getAccessToken()}`,
       },
     });
     if (!response.ok) {
@@ -146,11 +144,11 @@ export const ApiProvider = ({ children }: { children: React.ReactNode }) => {
 
   const searchContactByEmail = async (email: string) => {
     const params = new URLSearchParams({ email: email });
-    const response = await fetchWithAuth(`${config.API_URL}/protected/friends/search?${params.toString()}`, {
+    const response = await fetchWithAuth(`${config.API_URL}/friends/search?${params.toString()}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `${getAccessToken()}`,
+        Authorization: `${await getAccessToken()}`,
       }
     });
     if (!response.ok) {
@@ -161,11 +159,11 @@ export const ApiProvider = ({ children }: { children: React.ReactNode }) => {
   }
 
   const sendFriendRequest = async (friend_id: number) => {
-    const response = await fetchWithAuth(`${config.API_URL}/protected/friends/requests`, {
+    const response = await fetchWithAuth(`${config.API_URL}/friends/requests`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `${getAccessToken()}`,
+        Authorization: `${await getAccessToken()}`,
       },
       body: JSON.stringify({
         friend_id: friend_id
@@ -176,7 +174,7 @@ export const ApiProvider = ({ children }: { children: React.ReactNode }) => {
   }
 
   const userLogin = async (cred: LoginCredential) => {
-    const response = await fetch(config.API_URL + "/login", {
+    const response = await fetch(config.API_URL + "/auth/login", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -194,7 +192,7 @@ export const ApiProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const userSignup = async (cred: SignupCredential) => {
-    const response = await fetch(config.API_URL + "/signup", {
+    const response = await fetch(config.API_URL + "/auth/signup", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -213,7 +211,7 @@ export const ApiProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const respondFriendRequest = async (friendRequestID: number, senderID: number, friendRequestResponse: string) => {
-    const response = await fetchWithAuth(config.API_URL + `/protected/friends/requests/${friendRequestID}`, {
+    const response = await fetchWithAuth(config.API_URL + `/friends/requests/${friendRequestID}`, {
       method: 'PUT',
       headers: {
         "Content-Type": "application/json",
