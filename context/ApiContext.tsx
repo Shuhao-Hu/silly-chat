@@ -27,10 +27,7 @@ interface AuthFailure {
 
 type LoginResponse = LoginSuccess | AuthFailure;
 
-interface SignupSuccess {
-  user_id: number;
-  message: string;
-}
+interface SignupSuccess {};
 
 type SignupResponse = SignupSuccess | AuthFailure;
 
@@ -203,11 +200,10 @@ export const ApiProvider = ({ children }: { children: React.ReactNode }) => {
         username: cred.username,
       }),
     });
-    const data: SignupResponse = await response.json();
     if (!response.ok) {
-      return data as AuthFailure;
+      return await response.json() as AuthFailure;
     }
-    return data as SignupSuccess;
+    return {} as SignupSuccess;
   };
 
   const respondFriendRequest = async (friendRequestID: number, senderID: number, friendRequestResponse: string) => {
