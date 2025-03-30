@@ -8,6 +8,7 @@ import { StateProvider, useStateContext } from '@/context/StateContext';
 import { SQLiteProvider } from 'expo-sqlite';
 import { createDbIfNeeded } from '@/db/sqlite';
 import { WebsocketProvider } from '@/context/WebsocketContext';
+import { PaperProvider } from 'react-native-paper';
 
 export default function RootLayout() {
   return (
@@ -17,7 +18,9 @@ export default function RootLayout() {
           <ApiProvider>
             <StateProvider>
               <WebsocketProvider>
-                <ProtectedRoutes />
+                <PaperProvider>
+                  <ProtectedRoutes />
+                </PaperProvider>
               </WebsocketProvider>
             </StateProvider>
           </ApiProvider>
