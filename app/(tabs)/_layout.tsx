@@ -1,8 +1,5 @@
 import { Tabs } from 'expo-router';
-import { AuthProvider } from '../../context/AuthContext';
-import { ConfigProvider } from '@/context/ConfigContext';
-import { ApiProvider } from '@/context/ApiContext';
-import { Image, View } from 'react-native';
+import { View } from 'react-native';
 import Entypo from '@expo/vector-icons/Entypo';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';

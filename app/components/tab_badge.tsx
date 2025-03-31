@@ -1,6 +1,7 @@
 import { useStateContext } from '@/context/StateContext';
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
+import { Badge } from 'react-native-paper';
 
 const TabBadge = () => {
   const { friendRequests } = useStateContext();
@@ -9,9 +10,10 @@ const TabBadge = () => {
     <>
       {
         friendRequests.length !== 0 ? 
-        <View style={styles.bubble}>
-          <Text style={styles.text}>{friendRequests.length}</Text>
-        </View> : null
+          <Badge style={styles.bubble} size={15}>
+            {friendRequests.length > 99 ? "99+" : friendRequests.length}
+          </Badge> : 
+          null
       }
     </>
   );
@@ -19,20 +21,9 @@ const TabBadge = () => {
 
 const styles = StyleSheet.create({
   bubble: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: 'red',
     position: 'absolute',
-    top: -6,
-    right: -6,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  text: {
-    color: 'white',
-    fontWeight: 'bold',
-    fontSize: 10,
+    top: -8,
+    right: -8,
   },
 });
 

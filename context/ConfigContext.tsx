@@ -1,5 +1,6 @@
 import React, { createContext, useContext, ReactNode } from "react";
 import Constants from "expo-constants";
+import { Platform } from "react-native";
 
 // Define the config interface
 interface ConfigType {
@@ -10,8 +11,8 @@ interface ConfigType {
 
 // Define separate configs for development and release
 const devConfig: ConfigType = {
-  API_URL: "http://localhost:5286",
-  SOCKET_URL: "ws://localhost:5286/ws",
+  API_URL: Platform.OS === "android" ? "http://10.0.2.2:5286" : "http://localhost:5286",
+  SOCKET_URL: Platform.OS === "android" ? "ws://10.0.2.2:5286/ws" : "ws://localhost:5286/ws",
   ENV: "development",
 };
 

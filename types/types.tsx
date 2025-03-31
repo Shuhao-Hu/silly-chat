@@ -41,4 +41,40 @@ export interface ActiveConversation {
   last_updated: Date,
 }
 
+export interface LoginCredential {
+  email: string;
+  password: string;
+}
+
+export interface SignupCredential {
+  email: string;
+  password: string;
+  username: string;
+}
+
+export interface LoginSuccess {
+  id: number;
+  username: string;
+  access_token: string;
+  refresh_token: string;
+}
+
+export interface AuthFailure {
+  error: string;
+}
+
+export type LoginResponse = LoginSuccess | AuthFailure;
+
+export interface SignupSuccess {};
+
+export type SignupResponse = SignupSuccess | AuthFailure;
+
+export interface ContactResponse {
+  friends: Contact[];
+}
+
+
+export interface FriendRequestResponse {
+  friend_requests: FriendRequest[];
+}
 
