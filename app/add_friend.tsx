@@ -1,74 +1,106 @@
 import { useApi } from "@/context/ApiContext";
+import { useAuth } from "@/context/AuthContext";
 import { Contact } from "@/types/types";
-import { useState } from "react";
-import { View, Text, TextInput, Keyboard, StyleSheet, TouchableOpacity, Alert } from "react-native";
+import { getInitials } from "@/utils/helper";
+import { useEffect, useState } from "react";
+import { View, Text, Keyboard, StyleSheet, Alert, ActivityIndicator } from "react-native";
+import { Avatar, Button, Card, HelperText, Searchbar } from "react-native-paper";
 
 export default function AddFriend() {
   const [searchEmail, setSearchEmail] = useState("");
-  const [isSearchEmailFocus, setIsSearchEmailFocus] = useState(false);
+  const [userEmail, setUserEmail] = useState("");
+  const { getEmail, logout } = useAuth();
   const { searchContactByEmail, sendFriendRequest } = useApi();
   const [contact, setContact] = useState<Contact | null>(null);
   const [notFound, setNotFound] = useState<boolean | null>(null);
-  
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    getEmail()
+      .then((email) => {
+        setUserEmail(email);
+      })
+      .catch(() => logout());
+  }, []);
 
   const searchForEmail = async () => {
+    if (!searchEmail.trim()) return;
+    if (searchSelf()) return;
+
+    setLoading(true);
+    setContact(null);
+    setNotFound(null);
     Keyboard.dismiss();
-    const contact = await searchContactByEmail(searchEmail);
-    if (contact === null) {
-      setNotFound(true);
-    } else {
-      setNotFound(false);
-      setContact(contact);
+
+    try {
+      const result = await searchContactByEmail(searchEmail);
+      if (result) {
+        setContact(result);
+      } else {
+        setNotFound(true);
+      }
+    } catch (error) {
+      Alert.alert("Error", "Something went wrong. Please try again later.");
+    } finally {
+      setLoading(false);
     }
-  }
+  };
 
   const send = async () => {
     if (!contact) return;
     const result = await sendFriendRequest(contact.id);
     if (result) {
-      Alert.alert("Friend Request", "sent successfully");
+      Alert.alert("Friend Request", "Sent successfully");
       setContact(null);
       setNotFound(null);
       setSearchEmail("");
     } else {
-      Alert.alert("Friend Request", "failed, please try again later");
+      Alert.alert("Friend Request", "Failed, please try again later");
     }
+  };
+
+  const searchSelf = () => {
+    return searchEmail.toLowerCase() === userEmail.toLowerCase();
   }
 
   return (
     <View style={styles.container}>
       <View style={styles.searchContainer}>
-        <TextInput
+        <Searchbar
           placeholder="Search by email"
-          value={searchEmail}
           onChangeText={setSearchEmail}
-          autoCapitalize="none"
-          autoCorrect={false}
-          onFocus={() => { setIsSearchEmailFocus(true) }}
-          onBlur={() => { setIsSearchEmailFocus(false) }}
+          value={searchEmail}
           returnKeyType="search"
           onSubmitEditing={searchForEmail}
+          autoCapitalize="none"
+          autoCorrect={false}
+          inputMode="email"
           style={styles.searchInput}
         />
+        <HelperText type="error" visible={searchSelf()}>
+          You cannot search for yourself
+        </HelperText>
       </View>
       <View>
-        {notFound === true ? (
+        {loading ? (
+          <ActivityIndicator size="large" color="#3da9fc" style={{ marginTop: 20 }} />
+        ) : notFound === true ? (
           <View style={styles.notFoundContainer}>
             <Text style={styles.notFoundText}>No User Found</Text>
           </View>
         ) : contact !== null ? (
-          <View style={styles.foundContainer}>
-            <View style={styles.contactInfo}>
-              <Text style={styles.contactText}>{contact.username}</Text>
-              <Text style={styles.contactEmail}>{contact.email}</Text>
-            </View>
-            <TouchableOpacity 
-              style={styles.requestButton}
-              onPress={send}
-            >
-              <Text style={styles.requestButtonText}>Send friend request</Text>
-            </TouchableOpacity>
-          </View>
+          <Card mode="contained">
+            <Card.Title
+              title={contact.username}
+              titleVariant="titleLarge"
+              subtitle={contact.email}
+              subtitleVariant="titleSmall"
+              left={(props) => <Avatar.Text {...props} label={getInitials(contact.username)} />}
+            />
+            <Card.Actions>
+              <Button mode="contained" onPress={send} style={styles.button}>Send friend request</Button>
+            </Card.Actions>
+          </Card>
         ) : null}
       </View>
     </View>
@@ -86,11 +118,6 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   searchInput: {
-    height: 40,
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 10,
-    paddingHorizontal: 10,
     backgroundColor: "#fff",
   },
   notFoundContainer: {
@@ -102,42 +129,8 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#094067",
   },
-  foundContainer: {
-    marginTop: 20,
-    backgroundColor: "#fff",
-    padding: 20,  // Increased padding for a more spacious look
-    borderRadius: 12,
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 4,
-    elevation: 3,
-    width: "100%",
-    alignSelf: "center",
-  },
-  contactInfo: {
-    marginBottom: 15,
-  },
-  contactText: {
-    fontSize: 24, 
-    fontWeight: "bold",
-    color: "#333",
+  button: {
     marginBottom: 5,
-  },
-  contactEmail: {
-    fontSize: 14,
-    color: "rgba(0,0,0,0.6)", // More opaque email color
-  },
-  requestButton: {
-    alignSelf: "flex-end",
-    backgroundColor: "#3da9fc",
-    paddingVertical: 10,
-    paddingHorizontal: 18,
-    borderRadius: 8,
-  },
-  requestButtonText: {
-    color: "#fffffe",
-    fontWeight: "bold",
-    fontSize: 14,
-  },
+    marginRight: 5,
+  }
 });

@@ -20,7 +20,7 @@ export default function AuthScreen() {
   const [confirmPasswordError, setConfirmPasswordError] = useState("");
 
   // Context
-  const { login } = useAuth();
+  const { login, setEmail: setStorageEmail } = useAuth();
   const { userLogin, userSignup } = useApi();
 
   useEffect(() => {
@@ -88,6 +88,7 @@ export default function AuthScreen() {
           setPasswordError(response.error || "Invalid credentials.");
         } else {
           await login(response.id, response.username, response.access_token, response.refresh_token);
+          setStorageEmail(email);
         }
       }
     } catch (error) {

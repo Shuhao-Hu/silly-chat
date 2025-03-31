@@ -9,6 +9,7 @@ import { SQLiteProvider } from 'expo-sqlite';
 import { createDbIfNeeded } from '@/db/sqlite';
 import { WebsocketProvider } from '@/context/WebsocketContext';
 import { PaperProvider } from 'react-native-paper';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 export default function RootLayout() {
   return (
@@ -19,7 +20,9 @@ export default function RootLayout() {
             <StateProvider>
               <WebsocketProvider>
                 <PaperProvider>
-                  <ProtectedRoutes />
+                  <GestureHandlerRootView>
+                    <ProtectedRoutes />
+                  </GestureHandlerRootView>
                 </PaperProvider>
               </WebsocketProvider>
             </StateProvider>

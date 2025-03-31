@@ -1,10 +1,11 @@
 import { Text, View, StyleSheet, ActivityIndicator } from "react-native";
 import { useAuth } from "../../context/AuthContext";
 import { useStateContext } from "@/context/StateContext";
-import { act, useMemo } from "react";
+import { useMemo } from "react";
 import { FlatList } from "react-native-gesture-handler";
 import { Contact } from "@/types/types";
-import ConversationItem from "../components/conversation_item";
+import { Card, Avatar } from "react-native-paper"; // Import the necessary components
+import { getInitials } from "@/utils/helper";
 
 export default function Home() {
   const { isLoggedIn } = useAuth();
@@ -33,7 +34,7 @@ export default function Home() {
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" />
       </View>
-    )
+    );
   }
 
   if (activeConversations.length === 0) {
@@ -44,11 +45,22 @@ export default function Home() {
     );
   }
 
+  // Function to render each conversation item
+  const renderConversation = ({ item }: { item: Contact }) => (
+    <Card mode="outlined" style={styles.card}>
+      <Card.Title
+        title={item.username}
+        subtitle={item.email}
+        left={(props) => <Avatar.Text {...props} label={getInitials(item.username)} />}
+      />
+    </Card>
+  );
+
   return (
-    <View>
+    <View style={styles.container}>
       <FlatList
         data={conversationList}
-        renderItem={({ item }) => <ConversationItem user_id={item.id} username={item.username}></ConversationItem>}
+        renderItem={renderConversation}
         keyExtractor={(item) => item.id.toString()}
       />
     </View>
@@ -56,6 +68,11 @@ export default function Home() {
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    paddingHorizontal: 20,
+    paddingTop: 10,
+  },
   unLoggedinMsg: {
     flex: 1,
     alignItems: 'center',
@@ -74,5 +91,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold",
     color: "#094067",
+  },
+  card: {
+    marginBottom: 10,
   },
 });
