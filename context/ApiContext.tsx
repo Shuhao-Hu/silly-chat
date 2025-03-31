@@ -1,44 +1,7 @@
-import React, {createContext, useContext} from "react";
-import {useAuth} from "./AuthContext";
-import {useConfig} from "./ConfigContext";
-import {AccessTokenResponse, Contact, FriendRequest} from "@/types/types";
-
-interface LoginCredential {
-  email: string;
-  password: string;
-}
-
-interface SignupCredential {
-  email: string;
-  password: string;
-  username: string;
-}
-
-interface LoginSuccess {
-  id: number;
-  username: string;
-  access_token: string;
-  refresh_token: string;
-}
-
-interface AuthFailure {
-  error: string;
-}
-
-type LoginResponse = LoginSuccess | AuthFailure;
-
-interface SignupSuccess {};
-
-type SignupResponse = SignupSuccess | AuthFailure;
-
-interface ContactResponse {
-  friends: Contact[];
-}
-
-
-interface FriendRequestResponse {
-  friend_requests: FriendRequest[];
-}
+import React, { createContext, useContext } from "react";
+import { useAuth } from "./AuthContext";
+import { useConfig } from "./ConfigContext";
+import { AccessTokenResponse, AuthFailure, Contact, ContactResponse, FriendRequest, FriendRequestResponse, LoginCredential, LoginResponse, LoginSuccess, SignupCredential, SignupResponse, SignupSuccess } from "@/types/types";
 
 interface ApiContextType {
   userLogin: (cred: LoginCredential) => Promise<LoginResponse>;
@@ -48,6 +11,7 @@ interface ApiContextType {
   userSignup: (cred: SignupCredential) => Promise<SignupResponse>;
   searchContactByEmail: (email: string) => Promise<Contact | null>;
   sendFriendRequest: (friend_id: number) => Promise<boolean>;
+  updateUsername: (newUsername: string) => Promise<void>;
 }
 
 const ApiContext = createContext<ApiContextType | undefined>(undefined);
@@ -222,6 +186,21 @@ export const ApiProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }
 
+  const updateUsername = async (newUsername: string) => {
+    const response = await fetchWithAuth(`${config.API_URL}/auth/username`, {
+      method: 'PUT',
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        username: newUsername
+      }),
+    });
+    if (!response.ok) {
+      throw new Error("Failed to update username");
+    }
+  }
+
   return (
     <ApiContext.Provider value={{
       userLogin,
@@ -231,6 +210,7 @@ export const ApiProvider = ({ children }: { children: React.ReactNode }) => {
       respondFriendRequest,
       searchContactByEmail,
       sendFriendRequest,
+      updateUsername,
     }}>
       {children}
     </ApiContext.Provider>

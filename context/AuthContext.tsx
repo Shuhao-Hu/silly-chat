@@ -8,8 +8,9 @@ interface AuthContextType {
   getAccessToken: () => Promise<string | null>,
   getRefreshToken: () => Promise<string | null>,
   getUser: () => Promise<{ id: number | null, username: string | null }>,
-  setAccessToken: (accessToken: string) => Promise<void>,
-  setRefreshToken: (refreshToken: string) => Promise<void>,
+  setAccessToken: (accessToken: string) => void,
+  setRefreshToken: (refreshToken: string) => void,
+  setUsername: (newUsername: string) => void,
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -42,12 +43,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setIsLoggedIn(false);
   }
 
-  const setAccessToken = async (accessToken: string) => {
-    await AsyncStorage.setItem('access_token', accessToken);
+  const setAccessToken = (accessToken: string) => {
+    AsyncStorage.setItem('access_token', accessToken).catch(console.error);
   }
 
-  const setRefreshToken = async (refreshToken: string) => {
-    await AsyncStorage.setItem('refresh_token', refreshToken);
+  const setRefreshToken = (refreshToken: string) => {
+    AsyncStorage.setItem('refresh_token', refreshToken).catch(console.error);
   }
 
   const getAccessToken = async () => {
@@ -64,8 +65,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return { id, username };
   }
 
+  const setUsername = (newUsername: string) => {
+    AsyncStorage.setItem('username', newUsername).catch(console.error);
+  }
+
   return (
-    <AuthContext.Provider value={{ isLoggedIn, login, logout, getAccessToken, getRefreshToken, getUser, setAccessToken, setRefreshToken }}>
+    <AuthContext.Provider value={{ isLoggedIn, login, logout, getAccessToken, getRefreshToken, getUser, setAccessToken, setRefreshToken, setUsername }}>
       {children}
     </AuthContext.Provider>
   )
