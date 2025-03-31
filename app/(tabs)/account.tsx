@@ -1,13 +1,16 @@
 import { useEffect, useState } from "react";
 import { View, StyleSheet } from "react-native";
-import { Avatar, Card, Text, Button, TextInput } from "react-native-paper";
+import { Avatar, Card, Text, Button, TextInput, Snackbar } from "react-native-paper";
 import { useAuth } from "@/context/AuthContext"; // Replace with your actual auth context
+import { useApi } from "@/context/ApiContext";
 
 export default function UserAccountScreen() {
-  const { getUser, logout } = useAuth(); // Fetch user & actions from context
+  const { getUser, logout, setUsername } = useAuth(); // Fetch user & actions from context
   const [user, setUser] = useState<{ id: number | null; username: string | null }>({ id: null, username: null });
   const [newUsername, setNewUsername] = useState("");
   const [isEditing, setIsEditing] = useState(false);
+  const [visible, setVisible] = useState(false);
+  const { updateUsername } = useApi();
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -21,10 +24,17 @@ export default function UserAccountScreen() {
     fetchUser();
   }, []);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     // Assume updateUsername is implemented in the auth context
-    setUser((prev) => ({ ...prev, username: newUsername }));
-    setIsEditing(false);
+    updateUsername(newUsername).
+      then(() => {
+        setIsEditing(false);
+        setUser({...user, username: newUsername});
+        setUsername(newUsername);
+      }).
+      catch(() => {
+        setVisible(true);
+      });
   };
 
   return (
@@ -62,6 +72,19 @@ export default function UserAccountScreen() {
       <Button mode="contained" style={styles.logoutButton} onPress={logout}>
         Logout
       </Button>
+
+      <Snackbar
+        visible={visible}
+        onDismiss={() => setVisible(false)}
+        action={{
+          label: 'Close',
+          onPress: () => {
+            setVisible(false);
+          },
+        }}
+      >
+        Failed to update username, please try later.
+      </Snackbar>
     </View>
   );
 }
