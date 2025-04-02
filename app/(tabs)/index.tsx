@@ -1,22 +1,24 @@
-import { Text, View, StyleSheet, ActivityIndicator } from "react-native";
+import { Text, View, StyleSheet, ActivityIndicator, TouchableOpacity } from "react-native";
 import { useAuth } from "../../context/AuthContext";
 import { useStateContext } from "@/context/StateContext";
 import { useMemo } from "react";
 import { FlatList } from "react-native-gesture-handler";
 import { Contact } from "@/types/types";
-import { Card, Avatar } from "react-native-paper"; // Import the necessary components
+import { Card, Avatar, Divider } from "react-native-paper";
 import { getInitials } from "@/utils/helper";
+import { useRouter } from "expo-router";
 
 export default function Home() {
   const { isLoggedIn } = useAuth();
   const { activeConversations, contacts } = useStateContext();
+  const router = useRouter();
 
   const conversationList = useMemo(() => {
     if (activeConversations === null || contacts === null) {
       return null;
     }
-    return activeConversations.map(({ user_id }) => {
-      const contact = contacts.find((c) => c.id === user_id);
+    return activeConversations.map(({ chatting_user_id }) => {
+      const contact = contacts.find((c) => c.id === chatting_user_id);
       return contact;
     }).filter(Boolean) as Contact[];
   }, [activeConversations, contacts]);
@@ -47,13 +49,24 @@ export default function Home() {
 
   // Function to render each conversation item
   const renderConversation = ({ item }: { item: Contact }) => (
-    <Card mode="outlined" style={styles.card}>
-      <Card.Title
-        title={item.username}
-        subtitle={item.email}
-        left={(props) => <Avatar.Text {...props} label={getInitials(item.username)} />}
-      />
-    </Card>
+    <View style={styles.chat}>
+      <Avatar.Text size={50} label={getInitials(item.username)} />
+      <TouchableOpacity style={styles.content} 
+        onPress={() => 
+          router.push(`/${item.id}?username=${item.username}`)
+        }
+      >
+        <View style={styles.content}>
+          <Card.Title 
+            title={item.username} 
+            titleVariant="titleLarge"
+            subtitle={"last message"}
+            subtitleVariant="labelMedium" 
+          />
+          <Divider /> 
+        </View>
+      </TouchableOpacity>
+    </View>
   );
 
   return (
@@ -70,8 +83,6 @@ export default function Home() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 10,
   },
   unLoggedinMsg: {
     flex: 1,
@@ -92,7 +103,13 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#094067",
   },
-  card: {
-    marginBottom: 10,
+  chat: {
+    flexDirection: "row",
+    width: "100%",
+    alignItems: "center",
+    paddingLeft: 10,
   },
+  content: {
+    flex: 1,
+  }
 });

@@ -11,7 +11,7 @@ import { StackNavigationProp } from "@react-navigation/stack";
 export default function Contacts() {
   const { isLoggedIn } = useAuth();
 
-  const { contacts, setContacts, refreshFriendRequests } = useStateContext();
+  const { contacts, refreshFriendRequests } = useStateContext();
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
 
   useEffect(() => {

@@ -13,12 +13,14 @@ interface AuthContextType {
   setAccessToken: (accessToken: string) => void;
   setRefreshToken: (refreshToken: string) => void;
   setUsername: (newUsername: string) => void;
+  userId: number | null,
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
+  const [userId, setUserId] = useState<number | null>(null);
 
   useEffect(() => {
     checkLoginStatus();
@@ -27,6 +29,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const checkLoginStatus = async () => {
     const token = await AsyncStorage.getItem("access_token");
     setIsLoggedIn(!!token);
+    if (isLoggedIn) {
+      getUser().then(({id}) => setUserId(Number(id)));
+    }
   };
 
   const login = async (id: number, username: string, accessToken: string, refreshToken: string) => {
@@ -37,6 +42,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       AsyncStorage.setItem("username", username),
     ]);
     setIsLoggedIn(true);
+    setUserId(id);
   };
 
   const logout = async () => {
@@ -106,6 +112,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setAccessToken,
         setRefreshToken,
         setUsername,
+        userId,
       }}
     >
       {children}

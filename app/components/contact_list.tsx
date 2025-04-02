@@ -54,18 +54,27 @@ export default function ContactsList({ contacts }: ContactsListProps) {
     if (id === null) {
       return;
     }
-    await insertConversation(db, id, chattingID);
-    setActiveConversations(prevActiveConversations =>
-      [
-        ...(prevActiveConversations ?? []),
-        {
-          user_id: id,
-          chatting_user_id: chattingID,
-          last_updated: new Date(),
-        }
-      ]
+
+    // Check if the conversation already exists
+    const exists = activeConversations?.some(
+      (conv) => conv.user_id === id && conv.chatting_user_id === chattingID
     );
-  }
+
+    if (exists) {
+      return; // Do nothing if the conversation already exists
+    }
+
+    await insertConversation(db, id, chattingID);
+    setActiveConversations(prevActiveConversations => [
+      ...(prevActiveConversations ?? []),
+      {
+        user_id: id,
+        chatting_user_id: chattingID,
+        last_updated: new Date(),
+      }
+    ]);
+  };
+
 
   return (
     <View style={styles.container}>
@@ -78,9 +87,9 @@ export default function ContactsList({ contacts }: ContactsListProps) {
             <TouchableOpacity
               style={styles.contactItem}
               onPress={
-                async () => {
-                  await appendToActiveConversations(item.id);
-                  router.push(`/${item.id}`);
+                () => {
+                  appendToActiveConversations(item.id).catch(console.error);
+                  router.push(`/${item.id}?username=${item.username}`);
                 }
               }
             >

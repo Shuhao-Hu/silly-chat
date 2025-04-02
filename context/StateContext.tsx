@@ -3,6 +3,7 @@ import { useAuth } from "./AuthContext";
 import { useApi } from "./ApiContext";
 import { ActiveConversation, Contact, FriendRequest } from "@/types/types";
 import { useSQLiteContext } from "expo-sqlite";
+import { insertMessage } from "@/db/sqlite";
 
 interface FriendRequestContextType {
   friendRequests: FriendRequest[];
@@ -13,16 +14,19 @@ interface FriendRequestContextType {
   loadContacts: () => Promise<void>;
   activeConversations: ActiveConversation[] | null;
   setActiveConversations: React.Dispatch<React.SetStateAction<ActiveConversation[] | null>>;
+  currentChatUserId: number,
+  setCurrentChatUserId: React.Dispatch<React.SetStateAction<number>>;
 }
 
 const FriendRequestContext = createContext<FriendRequestContextType | undefined>(undefined);
 
 export const StateProvider = ({ children }: { children: ReactNode }) => {
   const { isLoggedIn, getUser } = useAuth();
-  const { fetchFriendRequests, fetchContacts } = useApi();
+  const { fetchFriendRequests, fetchContacts, fetchUnreadMessages } = useApi();
   const [contacts, setContacts] = useState<Contact[] | null>(null);
   const [friendRequests, setFriendRequests] = useState<FriendRequest[]>([]);
   const [activeConversations, setActiveConversations] = useState<ActiveConversation[] | null>(null);
+  const [currentChatUserId, setCurrentChatUserId] = useState(-1);
   const db = useSQLiteContext();
 
   const refreshActiveConversations = async () => {
@@ -52,8 +56,14 @@ export const StateProvider = ({ children }: { children: ReactNode }) => {
     setContacts(contacts);
   }
 
+  const getUnreadMessages = async () => {
+    const unreads = await fetchUnreadMessages();
+    unreads.forEach((m) => insertMessage(db, m.sender_id, m.recipient_id, m.content, m.created_at, false).catch(console.error));
+  }
+
   useEffect(() => {
     const refreshAllData = async () => {
+      await getUnreadMessages();
       await refreshFriendRequests();
       await loadContacts();
       await refreshActiveConversations();
@@ -71,6 +81,8 @@ export const StateProvider = ({ children }: { children: ReactNode }) => {
       refreshFriendRequests,
       activeConversations,
       setActiveConversations,
+      currentChatUserId,
+      setCurrentChatUserId,
     }}>
       {children}
     </FriendRequestContext.Provider>

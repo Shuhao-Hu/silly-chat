@@ -1,7 +1,7 @@
 import React, { createContext, useContext } from "react";
 import { useAuth } from "./AuthContext";
 import { useConfig } from "./ConfigContext";
-import { AccessTokenResponse, AuthFailure, Contact, ContactResponse, FriendRequest, FriendRequestResponse, LoginCredential, LoginResponse, LoginSuccess, SignupCredential, SignupResponse, SignupSuccess } from "@/types/types";
+import { AccessTokenResponse, AuthFailure, Contact, ContactResponse, FriendRequest, FriendRequestResponse, LoginCredential, LoginResponse, LoginSuccess, MessageDTO, SignupCredential, SignupResponse, SignupSuccess } from "@/types/types";
 
 interface ApiContextType {
   userLogin: (cred: LoginCredential) => Promise<LoginResponse>;
@@ -12,6 +12,8 @@ interface ApiContextType {
   searchContactByEmail: (email: string) => Promise<Contact | null>;
   sendFriendRequest: (friend_id: number) => Promise<boolean>;
   updateUsername: (newUsername: string) => Promise<void>;
+  fetchUnreadMessages: () => Promise<MessageDTO[]>;
+  sendMessage: (recipientId: number, content: string) => Promise<void>;
 }
 
 const ApiContext = createContext<ApiContextType | undefined>(undefined);
@@ -67,8 +69,8 @@ export const ApiProvider = ({ children }: { children: React.ReactNode }) => {
           Authorization: `Bearer ${tokens.access_token}`,
         },
       });
-      await setAccessToken(tokens.access_token);
-      await setRefreshToken(tokens.refresh_token);
+      setAccessToken(tokens.access_token);
+      setRefreshToken(tokens.refresh_token);
     }
     return response;
   };
@@ -201,6 +203,35 @@ export const ApiProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }
 
+  const fetchUnreadMessages = async () => {
+    const response = await fetchWithAuth(`${config.API_URL}/messages/unread`, {
+      method: 'GET',
+    });
+    if (!response.ok) {
+      throw new Error("Failed to fetch unread messages");
+    }
+
+    const data = await response.json() as {messages: MessageDTO[]};
+    console.log(data.messages);
+    return data.messages;
+  }
+
+  const sendMessage = async (recipientId: number, content: string) => {
+    const response = await fetchWithAuth(`${config.API_URL}/messages`, {
+      method: 'POST',
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        recipient_id: recipientId,
+        content: content,
+      }),
+    });
+    if (!response.ok) {
+      throw new Error("Failed to send message");
+    }
+  }
+
   return (
     <ApiContext.Provider value={{
       userLogin,
@@ -211,6 +242,8 @@ export const ApiProvider = ({ children }: { children: React.ReactNode }) => {
       searchContactByEmail,
       sendFriendRequest,
       updateUsername,
+      fetchUnreadMessages,
+      sendMessage,
     }}>
       {children}
     </ApiContext.Provider>

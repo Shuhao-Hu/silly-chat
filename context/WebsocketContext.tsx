@@ -1,8 +1,10 @@
 import { createContext, useEffect, useRef } from "react";
 import { useConfig } from "./ConfigContext";
-import { WebSocketMessage } from "@/types/types";
+import { MessageDTO, WebSocketMessage } from "@/types/types";
 import { useStateContext } from "./StateContext";
 import { useAuth } from "./AuthContext";
+import { insertMessage } from "@/db/sqlite";
+import { useSQLiteContext } from "expo-sqlite";
 
 interface WebsocketContextType {
 
@@ -12,8 +14,9 @@ const WebsocketContext = createContext<WebsocketContextType | undefined>(undefin
 
 export const WebsocketProvider = ({ children }: { children: React.ReactNode }) => {
   const ws = useRef<WebSocket | null>(null);
-  const { refreshFriendRequests } = useStateContext();
+  const { refreshFriendRequests, currentChatUserId } = useStateContext();
   const { isLoggedIn, getAccessToken } = useAuth();
+  const db = useSQLiteContext();
 
   const { API_URL } = useConfig();
   let heartbeatInterval: NodeJS.Timeout;
@@ -44,8 +47,8 @@ export const WebsocketProvider = ({ children }: { children: React.ReactNode }) =
         console.log(event.data);
         const data = JSON.parse(event.data) as WebSocketMessage;
         if (data.type === "dm") {
-          // TODO
-          // Handle Derict Message
+          const message = data.payload as MessageDTO;
+          insertMessage(db, message.sender_id, message.recipient_id, message.content, currentChatUserId === message.recipient_id);
         } else if (data.type === "friend_request") {
           console.log("refreshing friend requests");
           refreshFriendRequests();
