@@ -1,6 +1,6 @@
 import { createContext, useEffect, useRef } from "react";
 import { useConfig } from "./ConfigContext";
-import { MessageDTO, WebSocketMessage } from "@/types/types";
+import { Message, MessageDTO, WebSocketMessage } from "@/types/types";
 import { useStateContext } from "./StateContext";
 import { useAuth } from "./AuthContext";
 import { insertMessage } from "@/db/sqlite";
@@ -14,7 +14,7 @@ const WebsocketContext = createContext<WebsocketContextType | undefined>(undefin
 
 export const WebsocketProvider = ({ children }: { children: React.ReactNode }) => {
   const ws = useRef<WebSocket | null>(null);
-  const { refreshFriendRequests, currentChatUserId } = useStateContext();
+  const { refreshFriendRequests, currentChatUserId, setMessages } = useStateContext();
   const { isLoggedIn, getAccessToken } = useAuth();
   const db = useSQLiteContext();
 
@@ -48,7 +48,17 @@ export const WebsocketProvider = ({ children }: { children: React.ReactNode }) =
         const data = JSON.parse(event.data) as WebSocketMessage;
         if (data.type === "dm") {
           const message = data.payload as MessageDTO;
-          insertMessage(db, message.sender_id, message.recipient_id, message.content, currentChatUserId === message.recipient_id);
+          insertMessage(db, message.sender_id, message.recipient_id, message.content, message.created_at, currentChatUserId.current === message.recipient_id);
+          console.log({currentChatUserId, message});
+          if (currentChatUserId.current === message.sender_id) {
+            setMessages(prev => [{
+              sender_id: message.sender_id,
+              recipient_id: message.recipient_id,
+              timestamp: message.created_at,
+              content: message.content,
+              read: true,
+            } as Message, ...prev],);
+          }
         } else if (data.type === "friend_request") {
           console.log("refreshing friend requests");
           refreshFriendRequests();

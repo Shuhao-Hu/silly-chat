@@ -12,8 +12,7 @@ import { IconButton } from "react-native-paper";
 
 export default function Chat() {
   const [message, setMessage] = useState("");
-  const [messages, setMessages] = useState<Message[]>([]);
-  const { setCurrentChatUserId } = useStateContext();
+  const { currentChatUserId, messages, setMessages } = useStateContext();
   const route = useRoute();
   const { chat, username } = route.params as { chat: string, username: string };
   const navigation = useNavigation();
@@ -26,10 +25,22 @@ export default function Chat() {
       logout();
       return;
     }
+    currentChatUserId.current = (Number(chat));
+    navigation.setOptions({
+      title: username,
+    });
+    setMessages([]);
     getChatHistory(db, Number(chat), userId).then((m) => {
       setMessages(m);
     });
+    return () => {
+      currentChatUserId.current = -1;
+    };
   }, []);
+
+  useEffect(() => {
+    console.log("currentChatUserId updated:", currentChatUserId);
+  }, [currentChatUserId]);
 
   const send = () => {
     if (userId === null) {
@@ -56,21 +67,17 @@ export default function Chat() {
     }
   };
 
-  useEffect(() => {
-    setCurrentChatUserId(Number(chat));
-    navigation.setOptions({
-      title: username,
-    });
-    return () => {
-      setCurrentChatUserId(-1);
-    };
-  }, []);
 
-  const renderItem = ({ item }: { item: Message }) => (
-    <View style={styles.messageContainer}>
-      <Text style={styles.messageContent}>{item.content}</Text>
-    </View>
-  );
+  const renderItem = ({ item }: { item: Message }) => {
+    const isSentByUser = item.sender_id === userId;
+  
+    return (
+      <View style={[styles.messageContainer, isSentByUser ? styles.sentMessage : styles.receivedMessage]}>
+        <Text style={isSentByUser ? styles.messageContent : styles.receivedText}>{item.content}</Text>
+      </View>
+    );
+  };
+  
 
   return (
     <KeyboardAvoidingView
@@ -121,20 +128,31 @@ const styles = StyleSheet.create({
     backgroundColor: "#f0f0f0",
   },
   messagesList: {
-    paddingBottom: 80, // Ensure there's space for the input container
+    paddingBottom: 80,
   },
   messageContainer: {
-    marginVertical: 5,
+    maxWidth: "75%",
     padding: 10,
-    backgroundColor: "#f1f1f1",
     borderRadius: 10,
     marginHorizontal: 15,
+    marginVertical: 5,
   },
-  messageSender: {
-    fontWeight: "bold",
-    marginBottom: 5,
+  sentMessage: {
+    alignSelf: "flex-end",
+    backgroundColor: "#007AFF",
+    borderTopRightRadius: 0,
+  },
+  receivedMessage: {
+    alignSelf: "flex-start",
+    backgroundColor: "#E5E5EA",
+    borderTopLeftRadius: 0,
   },
   messageContent: {
+    fontSize: 16,
+    color: "#fff",
+  },
+  receivedText: {
+    color: "#000",
     fontSize: 16,
   },
 });

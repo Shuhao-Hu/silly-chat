@@ -15,39 +15,37 @@ export default function RootLayout() {
   return (
     <ConfigProvider>
       <AuthProvider>
-        <AuthWrapper/>
+        <ApiProvider>
+          <AuthWrapper />
+        </ApiProvider>
       </AuthProvider>
     </ConfigProvider>
   );
 }
 
 function AuthWrapper() {
-  const { userId } = useAuth(); 
+  const { isLoggedIn, userId } = useAuth();
+
+  if (!isLoggedIn) {
+    return <Login />;
+  }
 
   return (
     <SQLiteProvider databaseName={`silly-chat-${userId}.db`} onInit={createDbIfNeeded}>
-      <ApiProvider>
-        <StateProvider>
-          <WebsocketProvider>
-            <PaperProvider>
-              <GestureHandlerRootView>
-                <ProtectedRoutes />
-              </GestureHandlerRootView>
-            </PaperProvider>
-          </WebsocketProvider>
-        </StateProvider>
-      </ApiProvider>
+      <StateProvider>
+        <WebsocketProvider>
+          <PaperProvider>
+            <GestureHandlerRootView>
+              <ProtectedRoutes />
+            </GestureHandlerRootView>
+          </PaperProvider>
+        </WebsocketProvider>
+      </StateProvider>
     </SQLiteProvider>
   );
 }
 
 function ProtectedRoutes() {
-  const { isLoggedIn } = useAuth(); // Now this works inside AuthProvider  
-
-  if (!isLoggedIn) {
-    return <Login />; // 🚀 Redirect to login page if user is not authenticated
-  }
-
   return (
     <Stack>
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />

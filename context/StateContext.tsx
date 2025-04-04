@@ -1,7 +1,7 @@
-import React, { createContext, ReactNode, useContext, useEffect, useState } from "react";
+import React, { createContext, ReactNode, useContext, useEffect, useRef, useState } from "react";
 import { useAuth } from "./AuthContext";
 import { useApi } from "./ApiContext";
-import { ActiveConversation, Contact, FriendRequest } from "@/types/types";
+import { ActiveConversation, Contact, FriendRequest, Message } from "@/types/types";
 import { useSQLiteContext } from "expo-sqlite";
 import { insertMessage } from "@/db/sqlite";
 
@@ -14,8 +14,9 @@ interface FriendRequestContextType {
   loadContacts: () => Promise<void>;
   activeConversations: ActiveConversation[] | null;
   setActiveConversations: React.Dispatch<React.SetStateAction<ActiveConversation[] | null>>;
-  currentChatUserId: number,
-  setCurrentChatUserId: React.Dispatch<React.SetStateAction<number>>;
+  currentChatUserId: React.MutableRefObject<number>,
+  messages: Message[],
+  setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
 }
 
 const FriendRequestContext = createContext<FriendRequestContextType | undefined>(undefined);
@@ -26,7 +27,8 @@ export const StateProvider = ({ children }: { children: ReactNode }) => {
   const [contacts, setContacts] = useState<Contact[] | null>(null);
   const [friendRequests, setFriendRequests] = useState<FriendRequest[]>([]);
   const [activeConversations, setActiveConversations] = useState<ActiveConversation[] | null>(null);
-  const [currentChatUserId, setCurrentChatUserId] = useState(-1);
+  const currentChatUserId = useRef(-1);
+  const [messages, setMessages] = useState<Message[]>([]);
   const db = useSQLiteContext();
 
   const refreshActiveConversations = async () => {
@@ -82,7 +84,8 @@ export const StateProvider = ({ children }: { children: ReactNode }) => {
       activeConversations,
       setActiveConversations,
       currentChatUserId,
-      setCurrentChatUserId,
+      messages,
+      setMessages,
     }}>
       {children}
     </FriendRequestContext.Provider>

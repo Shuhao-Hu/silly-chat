@@ -4,8 +4,6 @@ import { SQLiteDatabase } from "expo-sqlite";
 let dbReady = false;
 
 export const createDbIfNeeded = async (db: SQLiteDatabase) => {
-  console.log(db);
-  await dropTablesIfNeeded(db);
   await db.execAsync(`
     CREATE TABLE IF NOT EXISTS messages (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
