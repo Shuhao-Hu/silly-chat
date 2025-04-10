@@ -1,9 +1,9 @@
 import React, { createContext, ReactNode, useContext, useEffect, useRef, useState } from "react";
 import { useAuth } from "./AuthContext";
 import { useApi } from "./ApiContext";
-import { ActiveConversation, Contact, FriendRequest, Message } from "@/types/types";
+import { ConversationSummary, Contact, FriendRequest, Message } from "@/types/types";
 import { useSQLiteContext } from "expo-sqlite";
-import { insertMessage } from "@/db/sqlite";
+import { insertMessage, getUserConversationSummary } from "@/db/sqlite";
 
 interface FriendRequestContextType {
   friendRequests: FriendRequest[];
@@ -12,8 +12,8 @@ interface FriendRequestContextType {
   contacts: Contact[] | null,
   setContacts: React.Dispatch<React.SetStateAction<Contact[] | null>>;
   loadContacts: () => Promise<void>;
-  activeConversations: ActiveConversation[] | null;
-  setActiveConversations: React.Dispatch<React.SetStateAction<ActiveConversation[] | null>>;
+  activeConversations: ConversationSummary[] | null;
+  setActiveConversations: React.Dispatch<React.SetStateAction<ConversationSummary[] | null>>;
   currentChatUserId: React.MutableRefObject<number>,
   messages: Message[],
   setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
@@ -22,27 +22,20 @@ interface FriendRequestContextType {
 const FriendRequestContext = createContext<FriendRequestContextType | undefined>(undefined);
 
 export const StateProvider = ({ children }: { children: ReactNode }) => {
-  const { isLoggedIn, getUser } = useAuth();
+  const { isLoggedIn, userId } = useAuth();
   const { fetchFriendRequests, fetchContacts, fetchUnreadMessages } = useApi();
   const [contacts, setContacts] = useState<Contact[] | null>(null);
   const [friendRequests, setFriendRequests] = useState<FriendRequest[]>([]);
-  const [activeConversations, setActiveConversations] = useState<ActiveConversation[] | null>(null);
+  const [activeConversations, setActiveConversations] = useState<ConversationSummary[] | null>(null);
   const currentChatUserId = useRef(-1);
   const [messages, setMessages] = useState<Message[]>([]);
   const db = useSQLiteContext();
 
   const refreshActiveConversations = async () => {
-    if (!isLoggedIn) return;
-    const { id } = await getUser();
-    if (id === null) {
-      console.warn("id is null");
-      return;
-    }
-    db.getAllAsync(
-      "SELECT * FROM conversations WHERE user_id = ?",
-      [id]
-    ).then((conversations) => {
-      setActiveConversations(conversations as ActiveConversation[]);
+    if (!isLoggedIn || userId.current === null) return;
+
+    getUserConversationSummary(db, userId.current).then((conversations) => {
+      setActiveConversations(conversations as ConversationSummary[]);
     });
   }
 

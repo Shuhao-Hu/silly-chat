@@ -7,7 +7,7 @@ import { useRoute } from "@react-navigation/native";
 import { useNavigation } from "expo-router";
 import { useSQLiteContext } from "expo-sqlite";
 import { useEffect, useState } from "react";
-import { View, TextInput, StyleSheet, KeyboardAvoidingView, Platform, FlatList, Text, Alert } from "react-native";
+import { View, TextInput, StyleSheet, KeyboardAvoidingView, Platform, FlatList, Text, Alert, SafeAreaView } from "react-native";
 import { IconButton } from "react-native-paper";
 
 export default function Chat() {
@@ -21,7 +21,7 @@ export default function Chat() {
   const { sendMessage } = useApi();
 
   useEffect(() => {
-    if (userId === null) {
+    if (userId.current === null) {
       logout();
       return;
     }
@@ -30,7 +30,7 @@ export default function Chat() {
       title: username,
     });
     setMessages([]);
-    getChatHistory(db, Number(chat), userId).then((m) => {
+    getChatHistory(db, Number(chat), userId.current).then((m) => {
       setMessages(m);
     });
     return () => {
@@ -38,12 +38,8 @@ export default function Chat() {
     };
   }, []);
 
-  useEffect(() => {
-    console.log("currentChatUserId updated:", currentChatUserId);
-  }, [currentChatUserId]);
-
   const send = () => {
-    if (userId === null) {
+    if (userId.current === null) {
       logout();
       return;
     }
@@ -52,13 +48,13 @@ export default function Chat() {
       sendMessage(Number(chat), message).then(() => {
         const newMessage: Message = {
           id: 0,
-          sender_id: userId,
+          sender_id: userId.current!,
           recipient_id: Number(chat),
           timestamp: new Date().toISOString(),
           content: message,
           read: true,  
         };
-        insertMessage(db, userId, Number(chat), message, newMessage.timestamp, true);
+        insertMessage(db, userId.current!, Number(chat), message, newMessage.timestamp, true).catch(console.error);
         setMessages(prevMessages => [newMessage, ...prevMessages]);
         setMessage("");
       }).catch(() => {
@@ -69,8 +65,11 @@ export default function Chat() {
 
 
   const renderItem = ({ item }: { item: Message }) => {
-    const isSentByUser = item.sender_id === userId;
-  
+    if (userId.current === null) {
+      return null;
+    }
+    
+    const isSentByUser = item.sender_id === userId.current;
     return (
       <View style={[styles.messageContainer, isSentByUser ? styles.sentMessage : styles.receivedMessage]}>
         <Text style={isSentByUser ? styles.messageContent : styles.receivedText}>{item.content}</Text>
@@ -80,28 +79,32 @@ export default function Chat() {
   
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-    >
-      <FlatList
-        data={messages}
-        renderItem={renderItem}
-        keyExtractor={item => item.timestamp}
-        inverted // Inverts the list so the latest message is at the bottom
-        contentContainerStyle={styles.messagesList}
-      />
-      
-      <View style={styles.inputContainer}>
-        <TextInput
-          style={styles.input}
-          placeholder="Type a message..."
-          value={message}
-          onChangeText={setMessage}
+    <SafeAreaView style={{ flex: 1 }}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0} // adjust this if needed
+      >
+        <FlatList
+          data={messages}
+          renderItem={renderItem}
+          keyExtractor={item => item.timestamp}
+          inverted
+          contentContainerStyle={[styles.messagesList, { flexGrow: 1, justifyContent: "flex-end" }]}
+          keyboardShouldPersistTaps="handled"
         />
-        <IconButton icon="send" size={24} onPress={send} />
-      </View>
-    </KeyboardAvoidingView>
+  
+        <View style={styles.inputContainer}>
+          <TextInput
+            style={styles.input}
+            placeholder="Type a message..."
+            value={message}
+            onChangeText={setMessage}
+          />
+          <IconButton icon="send" size={24} onPress={send} />
+        </View>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 

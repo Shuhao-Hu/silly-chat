@@ -31,7 +31,7 @@ function AuthWrapper() {
   }
 
   return (
-    <SQLiteProvider databaseName={`silly-chat-${userId}.db`} onInit={createDbIfNeeded}>
+    <SQLiteProvider databaseName={`silly-chat-${userId.current}.db`} onInit={createDbIfNeeded}>
       <StateProvider>
         <WebsocketProvider>
           <PaperProvider>

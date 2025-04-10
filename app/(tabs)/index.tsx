@@ -1,36 +1,49 @@
-import { Text, View, StyleSheet, ActivityIndicator, TouchableOpacity } from "react-native";
-import { useAuth } from "../../context/AuthContext";
-import { useStateContext } from "@/context/StateContext";
-import { useMemo } from "react";
-import { FlatList } from "react-native-gesture-handler";
-import { Contact } from "@/types/types";
-import { Card, Avatar, Divider } from "react-native-paper";
-import { getInitials } from "@/utils/helper";
-import { useRouter } from "expo-router";
+import {ActivityIndicator, StyleSheet, Text, TouchableOpacity, View} from "react-native";
+import {useAuth} from "@/context/AuthContext";
+import {useStateContext} from "@/context/StateContext";
+import {useMemo} from "react";
+import {FlatList} from "react-native-gesture-handler";
+import {Contact} from "@/types/types";
+import {Avatar, Badge, Card, Divider} from "react-native-paper";
+import {getInitials} from "@/utils/helper";
+import {useRouter} from "expo-router";
+import { markMessagesRead, selectAllMessages } from "@/db/sqlite";
+import { useSQLiteContext } from "expo-sqlite";
 
 export default function Home() {
   const { isLoggedIn } = useAuth();
-  const { activeConversations, contacts } = useStateContext();
+  const { activeConversations, setActiveConversations, contacts } = useStateContext();
   const router = useRouter();
-
+  const db = useSQLiteContext();
+  
   const conversationList = useMemo(() => {
     if (activeConversations === null || contacts === null) {
       return null;
     }
-    return activeConversations.map(({ chatting_user_id }) => {
-      const contact = contacts.find((c) => c.id === chatting_user_id);
-      return contact;
-    }).filter(Boolean) as Contact[];
+    
+    return activeConversations.map((conversation) => {
+      const contact = contacts.find((c) => c.id === conversation.chatting_user_id);
+      if (!contact) return null;
+      
+      return {
+        ...contact,
+        last_unread_message: conversation.last_unread_message,
+        unread_count: conversation.unread_count
+      };
+    }).filter(Boolean) as (Contact & { 
+      last_unread_message: string | null;
+      unread_count: number;
+    })[];
   }, [activeConversations, contacts]);
-
+  
   if (!isLoggedIn) {
     return (
       <View style={styles.unLoggedinMsg}>
         <Text>Please log in first to chat.</Text>
       </View>
-    );
+   );
   }
-
+  
   if (activeConversations === null || contacts === null) {
     return (
       <View style={styles.loadingContainer}>
@@ -38,7 +51,7 @@ export default function Home() {
       </View>
     );
   }
-
+  
   if (activeConversations.length === 0) {
     return (
       <View style={styles.textContainer}>
@@ -46,29 +59,46 @@ export default function Home() {
       </View>
     );
   }
-
+  
   // Function to render each conversation item
-  const renderConversation = ({ item }: { item: Contact }) => (
+  const renderConversation = ({ item }: { item: Contact & { 
+    last_unread_message: string | null;
+    unread_count: number;
+  }}) => (
     <View style={styles.chat}>
       <Avatar.Text size={50} label={getInitials(item.username)} />
-      <TouchableOpacity style={styles.content} 
-        onPress={() => 
-          router.push(`/${item.id}?username=${item.username}`)
-        }
+      <TouchableOpacity 
+        style={styles.content} 
+        onPress={() => {
+          selectAllMessages(db).then(console.log);
+          markMessagesRead(db, item.id);
+          setActiveConversations(prev =>
+            prev
+              ? prev.map(c =>
+                  c.chatting_user_id === item.id
+                    ? { ...c, unread_count: 0 }
+                    : c
+                )
+              : [])
+          router.push(`/${item.id}?username=${item.username}`);
+        }}
       >
         <View style={styles.content}>
           <Card.Title 
             title={item.username} 
             titleVariant="titleLarge"
-            subtitle={"last message"}
+            subtitle={item.last_unread_message === null ? "" : item.last_unread_message}
             subtitleVariant="labelMedium" 
           />
+          {item.unread_count > 0 && (
+            <Badge style={styles.badge}>{item.unread_count}</Badge>
+          )}
           <Divider /> 
         </View>
       </TouchableOpacity>
     </View>
   );
-
+  
   return (
     <View style={styles.container}>
       <FlatList
@@ -81,6 +111,11 @@ export default function Home() {
 }
 
 const styles = StyleSheet.create({
+  badge: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+  },
   container: {
     flex: 1,
   },

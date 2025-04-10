@@ -38,24 +38,17 @@ export interface AccessTokenResponse {
   refresh_token: string;
 }
 
-export type WsMessageType = "dm" | "friend_request";
+export type WsMessageType = "dm" | "friend_request" | "friend_request_accepted";
 
 export interface WebSocketMessage<T = unknown> {
   type: WsMessageType;
   payload: T;
 }
 
-export interface DirectMessagePayload {
-  sender_id: number,
-  recipient_id: number,
-  content: string,
-  timestamp: string,
-}
-
-export interface ActiveConversation {
-  user_id: number,
-  chatting_user_id: number,
-  last_updated: Date,
+export interface ConversationSummary {
+  chatting_user_id: number;
+  unread_count: number;
+  last_unread_message: string | null;
 }
 
 export interface LoginCredential {

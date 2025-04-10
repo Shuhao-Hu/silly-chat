@@ -34,7 +34,7 @@ const waitForDbReady = async () => {
 export const insertConversation = async (db: SQLiteDatabase, userId: number, chattingId: number) => {
   await waitForDbReady();
   await db.runAsync(`
-      INSERT OR IGNORE INTO conversations (user_id, chatting_user_id)
+    INSERT OR IGNORE INTO conversations (user_id, chatting_user_id)
       VALUES (?, ?);
   `, [userId, chattingId]);
 };
@@ -70,5 +70,50 @@ export const getChatHistory = async (
 
 export const selectAllMessages = async (db: SQLiteDatabase) => {
   await waitForDbReady();
+  console.log(db);
   return await db.getAllAsync(`SELECT * FROM messages`);
 };
+
+export const getUserConversationSummary = async (db: SQLiteDatabase, userId: number) => {
+  await waitForDbReady();
+  return await db.getAllAsync(`
+    SELECT
+        c.chatting_user_id,
+        COUNT(CASE WHEN m.read = 0 AND m.sender_id = c.chatting_user_id THEN 1 END) AS unread_count,
+        (
+            SELECT content
+            FROM messages
+            WHERE sender_id = c.chatting_user_id
+            AND recipient_id = c.user_id
+            AND read = 0
+            ORDER BY timestamp DESC
+            LIMIT 1
+        ) AS last_unread_message,
+        c.last_updated
+    FROM
+        conversations c
+    LEFT JOIN
+        messages m ON m.sender_id = c.chatting_user_id AND m.recipient_id = c.user_id
+    WHERE
+        c.user_id = ?
+    GROUP BY
+        c.chatting_user_id
+    ORDER BY
+        c.last_updated DESC;
+  `, [userId]);
+};
+
+export const markMessagesRead = async (db: SQLiteDatabase, contactUserId: number) => {
+  const stmt = await db.prepareAsync(`
+    UPDATE messages 
+    SET read = 1 
+    WHERE sender_id = $chatUserId 
+    AND read = 0
+  `);
+  try {
+    await stmt.executeAsync({ $chatUserId: contactUserId });
+  } finally {
+    await stmt.finalizeAsync();
+  }
+};
+ 

@@ -1,4 +1,4 @@
-import React, { createContext, ReactNode, useContext, useEffect, useState } from "react";
+import React, {createContext, ReactNode, useContext, useEffect, useRef, useState} from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 interface AuthContextType {
@@ -13,14 +13,14 @@ interface AuthContextType {
   setAccessToken: (accessToken: string) => void;
   setRefreshToken: (refreshToken: string) => void;
   setUsername: (newUsername: string) => void;
-  userId: number | null,
+  userId: React.MutableRefObject<number | null>,
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
-  const [userId, setUserId] = useState<number | null>(null);
+  const userId = useRef<number | null>(null);
 
   useEffect(() => {
     checkLoginStatus();
@@ -30,7 +30,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const token = await AsyncStorage.getItem("access_token");
     setIsLoggedIn(!!token);
     if (isLoggedIn) {
-      getUser().then(({id}) => setUserId(Number(id)));
+      getUser().then(({id}) => userId.current = Number(id));
     }
   };
 
@@ -42,7 +42,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       AsyncStorage.setItem("username", username),
     ]);
     setIsLoggedIn(true);
-    setUserId(id);
+    userId.current = id;
   };
 
   const logout = async () => {

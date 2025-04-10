@@ -14,7 +14,7 @@ const WebsocketContext = createContext<WebsocketContextType | undefined>(undefin
 
 export const WebsocketProvider = ({ children }: { children: React.ReactNode }) => {
   const ws = useRef<WebSocket | null>(null);
-  const { refreshFriendRequests, currentChatUserId, setMessages } = useStateContext();
+  const { refreshFriendRequests, currentChatUserId, setMessages, activeConversations, setActiveConversations } = useStateContext();
   const { isLoggedIn, getAccessToken } = useAuth();
   const db = useSQLiteContext();
 
@@ -58,6 +58,32 @@ export const WebsocketProvider = ({ children }: { children: React.ReactNode }) =
               content: message.content,
               read: true,
             } as Message, ...prev],);
+          } else {
+            setActiveConversations(prev => {
+              if (!prev) return [];
+              const existingIndex = prev.findIndex(c => c.chatting_user_id === message.sender_id);
+              if (existingIndex !== -1) {
+                // Modify existing conversation
+                return prev.map((c, i) =>
+                  i === existingIndex
+                    ? {
+                        ...c,
+                        last_unread_message: message.content,
+                        unread_count: c.unread_count + 1,
+                      }
+                    : c
+                );
+              } else {
+                // Add new conversation
+                const newConversation = {
+                  chatting_user_id: message.sender_id,
+                  last_unread_message: message.content,
+                  unread_count: 1,
+                  last_updated: new Date().toISOString(),
+                };
+                return [newConversation, ...prev];
+              }
+            });
           }
         } else if (data.type === "friend_request") {
           console.log("refreshing friend requests");
